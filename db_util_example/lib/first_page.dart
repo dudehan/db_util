@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sp_util/sp_util.dart';
-import 'package:sqlite_demo/db_util/wx_wallet_db.dart';
+import 'package:db_util/wx_wallet_db.dart';
 
 class FirstPage extends StatefulWidget {
   @override
@@ -10,7 +10,6 @@ class FirstPage extends StatefulWidget {
 class _FirstPageState extends State<FirstPage> {
   @override
   Widget build(BuildContext context) {
-    print('first page build : ...');
     return Scaffold(
       appBar: AppBar(
         title: Text('FirstPage'),
@@ -21,6 +20,7 @@ class _FirstPageState extends State<FirstPage> {
           children: <Widget>[
             RaisedButton(
               onPressed: () {
+                print('xxxxx');
                 _createDB('wallet_0');
               },
               child: Text('新建新钱包：wallet_0'),
@@ -81,18 +81,27 @@ class _FirstPageState extends State<FirstPage> {
               },
               child: Text('获取钱包列表'),
             ),
-            Divider(color: Colors.grey),
             RaisedButton(
               onPressed: () {
-                SpUtil.putString('key', 'value');
+                _insertOrder('wallet_0','orderList');
               },
-              child: Text('putString'),
+              child: Text('存入交易记录'),
+            ),
+            RaisedButton(
+              onPressed: () {
+                _query('wallet_0','orderList');
+              },
+              child: Text('查询交易记录'),
             ),
           ],
         ),
       ),
     );
   }
+}
+
+_insertOrder(String table, String key) async {
+  await await WXDataBaseUtil.insert(table, key, {'order_no': '0', 'value': '100'}, isReplaced: false);
 }
 
 _delete(String table, String key) async {
@@ -136,6 +145,9 @@ _query(String tableName, String key) async {
   }
   if (data is String) {
     print('string ....');
+  }
+  if (data is List) {
+    print('List ....');
   }
   print('data ==== $data');
 }

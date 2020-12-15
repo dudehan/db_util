@@ -43,6 +43,20 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "1.15.0-nullsafety.3"
+  cupertino_icons:
+    dependency: "direct main"
+    description:
+      name: cupertino_icons
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "1.0.0"
+  db_util:
+    dependency: "direct main"
+    description:
+      path: ".."
+      relative: true
+    source: path
+    version: "0.0.1"
   fake_async:
     dependency: transitive
     description:
@@ -204,14 +218,14 @@ packages:
     source: hosted
     version: "1.8.0-nullsafety.2"
   sp_util:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: sp_util
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "1.0.1"
   sqflite:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: sqflite
       url: "https://pub.flutter-io.cn"

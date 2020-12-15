@@ -17,39 +17,47 @@ class WXDataBaseUtil {
     if (!isExist) {
       await createTable(table);
     }
-
-    /// 添加缓存
-    if(isReplaced) _addCache(table, key, data);
-
     Database db = await _openDatabase();
-    String jsonString = json.encode(data);
 
-    /// 不替换则直接插入
-    if (!isReplaced) {
-      db.insert(table, {DataPersistenceKey: key, DataPersistenceValue: jsonString});
-      return;
-    }
+    /// 替换
+    if (isReplaced) {
+      _addCache(table, key, data);
+      String jsonString = json.encode(data);
+      /// 根据key获取数据库数据
+      List<Map<String, dynamic>> list = await db.query(table,
+          columns: [DataPersistenceKey], where: '$DataPersistenceKey = ?', whereArgs: [key]);
 
-    /// 根据key获取数据库数据
-    List<Map<String, dynamic>> list =
-        await db.query(table, columns: [DataPersistenceKey], where: '$DataPersistenceKey = ?', whereArgs: [key]);
-
-    if (list.length > 0) {
       /// 存在则更新
-      Map<String, dynamic> values = {DataPersistenceValue: jsonString};
-      db.update(table, values, where: '$DataPersistenceKey = ?', whereArgs: [key]);
+      if (list.length > 0) {
+        Map<String, dynamic> values = {DataPersistenceValue: jsonString};
+        db.update(table, values, where: '$DataPersistenceKey = ?', whereArgs: [key]);
+      } else {
+        db.insert(table, {DataPersistenceKey: key, DataPersistenceValue: jsonString});
+      }
     } else {
-      /// 不存在则添加
-      db.insert(table, {DataPersistenceKey: key, DataPersistenceValue: jsonString});
+      /// 不替换则为列表数据，需要在最后插入数据
+      /// 根据key获取数据库数据
+      List<Map<String, dynamic>> list = await db.query(table,
+          columns: [DataPersistenceKey, DataPersistenceValue], where: '$DataPersistenceKey = ?', whereArgs: [key]);
+      if (list.length > 0) {
+        List<dynamic> result = json.decode(list[0][DataPersistenceValue]);
+        result.add(data);
+        Map<String, dynamic> values = {DataPersistenceValue: json.encode(result)};
+        db.update(table, values, where: '$DataPersistenceKey = ?', whereArgs: [key]);
+        _addCache(table, key, result);
+      } else {
+        String jsonString = json.encode([data]);
+        db.insert(table, {DataPersistenceKey: key, DataPersistenceValue: jsonString});
+        _addCache(table, key, [data]);
+      }
     }
-    // db.close();
   }
 
-  /// 查询（key为null则查询所以数据）
+  /// 查询（key为null则查询所有数据）
   static Future query(String table, {String key}) async {
     /// 先去缓存查找，没有则去数据库查找，查找完自动添加进缓存
     dynamic result = _queryCache(table, key);
-    if(result != null) return result;
+    if (result != null) return result;
 
     /// 打开数据库
     bool isExist = await isTableExist(table);
@@ -70,6 +78,7 @@ class WXDataBaseUtil {
 
     if (queryData.length > 0) {
       String string = queryData[0][DataPersistenceValue];
+
       /// 查找结果添加进缓存
       result = json.decode(string);
       _addCache(table, key, result);
@@ -153,11 +162,11 @@ class WXDataBaseUtil {
       _dbUtilCache[table] = tableCache;
     }
   }
-  /// 查询缓存数据
+
   static dynamic _queryCache(String table, String key) {
     if (key != null && _dbUtilCache.containsKey(table)) {
       Map<String, dynamic> tableCache = _dbUtilCache[table];
-      if(tableCache != null) {
+      if (tableCache != null) {
         return tableCache[key];
       }
     }
